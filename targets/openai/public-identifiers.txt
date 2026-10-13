@@ -1,0 +1,24 @@
+# Public identifiers allowed in targets/openai/spec (exempt from the leak checker's snake-in-corpus rule).
+# Categories per CLEANROOM.md "keep": user-facing config.toml keys, public Responses API fields,
+# and model-facing tool names / parameters of the open-source Codex CLI and shipped plugins.
+# config.toml keys (documented)
+model_reasoning_effort
+model_reasoning_summary
+model_context_window
+model_auto_compact_token_limit
+requires_openai_auth
+project_doc_max_bytes
+project_doc_fallback_filenames
+project_root_markers
+tool_timeout_sec
+startup_timeout_sec
+# Responses API fields
+previous_response_id
+function_call_output
+max_output_tokens
+# model-facing tool names / parameters
+request_user_input
+yield_time_ms
+list_mcp_resources
+list_mcp_resource_templates
+read_mcp_resource
