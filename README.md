@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="brodex.png" alt="Brodex" width="320">
+</p>
+
 # Brodex
 
 **A clean-room study of how OpenAI's ChatGPT/Codex desktop agent harness works, compared dimension by dimension with Claude Code.**
