@@ -27,9 +27,9 @@ Conventions:
 | [06-multi-agent-and-background.md](06-multi-agent-and-background.md) | Path-addressed agent tree, mailbox results, roles, limits, blackboard, PTY sessions, automations, cloud best-of-N | D10 | 13 |
 | [07-extensibility.md](07-extensibility.md) | MCP as sole tool substrate, skills, plugins + marketplaces, connectors, hooks, elicitation, MCP Apps | D11 | 15 |
 | [08-desktop-coding-host.md](08-desktop-coding-host.md) | Host ids, private-ref turn snapshots and reverse-patch undo, worktrees, handoff, remote control, browser panel, notifications | D12, D15 | 14 |
-| [09-computer-use.md](09-computer-use.md) | Separately signed helper app, REPL capability handles, signing-team peer check, window-targeted input, app policy tiers, observe-then-act deltas | D13, D14 | 22 |
+| [09-computer-use.md](09-computer-use.md) | Separately signed helper app, REPL capability handles, signing-team peer check, window-targeted input, app policy tiers, observe-then-act deltas, Computer History activity memory | D13, D14 | 28 |
 
-Total: 152 takeaways.
+Total: 158 takeaways.
 
 ## Top takeaways
 

@@ -497,6 +497,10 @@ re-push → auto-merge loop (spec/08/T5).
 - Observe-then-act with accessibility-tree deltas, pixels only on request
   (09/T8); in-app browser panel with DevTools/WebMCP bridge, preferred over
   CU (08/T13).
+- Opt-in Computer History on the same service: an event stream without
+  screenshots, raw segments kept up to 48 hours, summarized into 10-minute
+  and 6-hour memories, with a coarse-to-fine retrieval recipe and freshness
+  check (09/T23, 09/T24, 09/T28).
 
 **Claude Code approach**
 - Preference ladder MCP → shell → browser → screen (spec/09/T1).
@@ -534,7 +538,10 @@ first contact (09/T9).
 - Structured LLM approver with a no-route-around-denials rule (04/T10);
   fail-closed shell parsing and enforcement (04/T5, 04/T14).
 - Taint tracking in memory: extraction skips threads polluted by external
-  content, and activity memory stays descriptive and tainted (05/T11, 09/T15).
+  content, and activity memory stays descriptive and tainted (05/T11, 09/T15);
+  Computer History capture policy ANDs app and URL rules, lets block win and
+  always excludes private browsing, and settings writes need a fresh read
+  plus confirmation before broadening (09/T25, 09/T26).
 - Confirmation taxonomy for CU actions; third-party content never counts as
   consent (09/T14); managed requirements gate browser/CU and hooks (04
   Mechanics).

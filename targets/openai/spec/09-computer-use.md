@@ -1,5 +1,10 @@
 # 09 — Computer Use ("work with apps")  (OpenAI ChatGPT/Codex desktop 26.930, CLI 0.160)
 
+> The Computer History subsection was rechecked against desktop build 26.1007
+> with CLI 0.162 and against the public help page (2026-10). The feature did
+> not change between 26.930 and 26.1007 apart from a bundled plugin version
+> bump; the recheck added detail and public-docs provenance.
+
 ## Overview
 
 On macOS, Computer Use (CU) is its own Swift background app, signed and
@@ -310,7 +315,112 @@ start it through a small launcher script under `$CODEX_HOME`.
 | Messages | `send_message`, `read_messages`, `find_chats`, `read_image`, `search_messages`, plus an activity-count tool; cursor pagination; per-response opaque local references that must not be reused across responses; approval persistence once / turn / session / always; single-use send plans with a tombstone so a retried send reports possible prior delivery instead of duplicating |
 | Calendar | `create_event`, `get_event`, `list_events`, `delete_event`, `update_event`; 31-day query window; recurring edits target this event or future events |
 | Activity recording | start / status / stop; after user confirmation captures clicks, keystrokes and window contents, capped at 30 minutes, into JSONL plus a session file; a skill turns the recording into a reusable skill |
-| Activity history | rolling store of observed activity with per-app/URL observe and do-not-observe rules, always excluding private browsing; a summarizer (likely run via `codex exec`) writes 10-minute and 6-hour Markdown memories into the memories area, tagged so later memory consolidation can tell they were derived |
+| Activity history (Computer History) | opt-in event stream of interactions and accessibility context, no screenshots, kept as short-lived segment files (up to 48 hours); app and URL observe/do-not-observe policy with private browsing always excluded; a short-lived agent session summarizes it server-side into durable 10-minute and 6-hour Markdown memories; a bundled skill plus an MCP server with status, pause, resume, get-settings and update-settings tools (see next subsection) |
+
+### Computer History (activity memory)
+
+Computer History is an opt-in, rolling record of what the user does on the
+Mac, turned into memories that later chats can draw on. The CU service does
+the capturing; summarization and retrieval live in the agent harness.
+
+```
+ allowed apps / sites ── interaction + accessibility events ──▶ CU service
+                                                                    │
+            app-group container: segment folders (event log + metadata),
+            a suppressed-events file; temporary, deleted within 48 h
+                                                                    │
+            periodic short-lived agent session (processed server-side)
+                                                                    ▼
+      memories dir / dedicated extension folder: 10-minute and 6-hour Markdown
+                                                                    │
+            later chats: memory injection (per-chat /memories control)
+            + bundled skill and MCP tools (status, settings, search raw segments)
+```
+
+**Capture.**
+- What is recorded is a stream of interaction events, not video. Evidence
+  fields include the app, window, URL, selected and typed text, the focused
+  element, the target of mouse or keyboard input, and accessibility tree
+  content or diffs (observed).
+- Clicks, typing, shortcuts, app switches and accessibility context are
+  captured; there are no screenshots, no microphone or system audio, and the
+  feature does not need the Screen Recording permission (public docs).
+
+**Storage and retention.**
+- Raw events are written per segment: each segment folder holds a JSONL event
+  log that serves as the model-facing evidence and a metadata file with
+  timing and event counts. A separate file tracks suppressed events (observed).
+- These event files sit in the service's app-group container and are deleted
+  after at most 48 hours. They are not encrypted, and other processes running
+  as the same user can read the memory files (public docs).
+- Durable output is Markdown in a dedicated extension folder under the
+  memories directory: an instructions file plus resource files at two
+  granularities, one per 10-minute window and one per 6-hour window, named
+  with a UTC timestamp, an id, the granularity and a slug (observed). Memories
+  persist until the user deletes them (public docs).
+
+**Summarization.**
+- A periodic, short-lived agent session produces the summaries. Event files
+  are processed on the vendor's servers, are not kept after processing unless
+  the law requires it, and are not used for training (public docs). No
+  schedule is published; the two granularities are confirmed by file naming
+  (observed).
+- Memories used in later chats become context covered by the user's data
+  controls, and the `/memories` control toggles per chat whether memories are
+  used and contributed (public docs).
+- The summarizer treats everything derived from observed content as untrusted
+  and writes descriptive memory only (see Prompt surfaces and T15).
+
+**Retrieval recipe (bundled skill, observed).**
+- Check the feature's status first, then compare the current time with the
+  newest segment's metadata to judge how fresh the history is.
+- Coarse to fine: for broad questions read the 6-hour summaries, then drill
+  into 10-minute ones; for recent or very specific questions search the raw
+  segment logs directly with a text search tool.
+- Event content is untrusted evidence, not instructions.
+- Once history identifies the relevant app or document, move to that app's
+  own connector or source rather than answering from observed text.
+- Do not use the activity-recording connector for questions about background
+  history.
+
+**Settings model.**
+- There is a default behaviour (observe or do not observe) for apps and a
+  separate default for URLs, plus allow and block lists of rules. Each rule
+  is scoped to an app (by bundle identifier) or to a URL domain, and domain
+  rules also match subdomains (observed).
+- A browser record with a URL must pass both the app policy and the URL
+  policy; a record without a URL is judged by app policy alone. Within a
+  scope, a block beats an allow. Private browsing is always excluded,
+  whatever the rules say (observed).
+- The agent changes settings only through the MCP tools, never by editing
+  files. It must fetch the current settings immediately before writing,
+  because an update replaces the whole document, and it must ask the user
+  before switching a default to a broader setting (observed).
+- The settings UI offers four modes: exclude chosen apps, exclude chosen
+  sites, include only chosen apps, or include only chosen sites. Changes
+  affect future history only (public docs).
+
+**States and clearing.**
+- Three states: running; paused, which keeps the current segment but records
+  nothing new; and stopped, after which completed segments and memories stay
+  in place (observed). A summary already in progress may still finish after a
+  pause, and pause/resume is available in Settings and the menu bar (public
+  docs).
+- History can be cleared for the last 10 minutes, last hour, last day, or all
+  time, and individual items can be deleted; the menu bar can clear the most
+  recent session for an app. Clearing cannot be undone (public docs). The
+  desktop status model carries matching clear windows (observed).
+
+**Availability.**
+- macOS desktop only; offered on Pro, Business and Enterprise plans. A
+  workspace admin must first enable the feature, then each person opts in
+  separately. Memories must be turned on, and it is unavailable when signed
+  in with an API key or using Bedrock. The help page also addresses regional
+  availability, naming the EEA, Switzerland and the UK. Off by default
+  (public docs).
+- The help page warns that app and site content can carry prompt injection,
+  and recommends that users pause recording or leave sensitive apps out, and
+  ask others for permission before their messages are recorded (public docs).
 
 ### Prompt surfaces (described, not quoted)
 
@@ -431,6 +541,24 @@ start it through a small launcher script under `$CODEX_HOME`.
   are parameters rather than literals, attempts are single-use and bound to an
   active thread, physical input suppresses immediately, and the component that
   touches the sensitive field is kept minimal and unexported.
+- **T23** — Keep raw evidence and distilled memory in separate layers. Raw
+  events live briefly in segment logs with metadata; durable memory is
+  Markdown at two time scales. Hand the agent a coarse-to-fine lookup order
+  (long summaries, then short ones, then raw search).
+- **T24** — Make staleness visible before history is trusted. A status call
+  plus a comparison of the current time against the latest segment's
+  timestamps tells the agent how current its view is.
+- **T25** — Guard whole-document settings writes. Require a fresh read just
+  before every replace, and require user confirmation before any default is
+  widened.
+- **T26** — Combine capture policies with AND across scopes (app and URL),
+  let a block win inside a scope, and hard-code one exclusion (private
+  browsing) that sits outside the rule system entirely.
+- **T27** — Use passive history as a pointer, not an answer. When history
+  identifies the app or document involved, switch to that authoritative
+  connector or file instead of quoting observed text.
+- **T28** — Shrink the sensitive layer. Raw data is kept for hours, users get
+  clear windows and per-item deletion, and only summaries persist.
 
 ## Open questions
 
@@ -446,8 +574,11 @@ start it through a small launcher script under `$CODEX_HOME`.
    user-initiated, and where does the UI offer it?
 3. What is the request/response shape of the server-side site-status check,
    and does a failed policy check default to fail-open or fail-closed?
-4. Is the activity-history summarizer sandboxed more tightly than a normal
-   `codex exec` run, and what model backs it?
+4. The Computer History summarizer is a short-lived agent session whose
+   input is processed server-side (public docs), and what is captured is now
+   known (interaction events plus accessibility context, no screenshots).
+   Still open: is that session sandboxed more tightly than a normal agent
+   run, and which model backs it?
 5. How do the Apple Event/XPC transport and the JSON-RPC socket relate? Is the Apple Event/XPC path a leftover, or reserved for the desktop's native
    bridge and the older MCP client?
 6. The per-episode auto-unlock attempt cap and the four lock-screen timing
@@ -460,3 +591,9 @@ start it through a small launcher script under `$CODEX_HOME`.
 8. Is there any per-action pacing beyond settle delays and approvals, for
    example on the server side? The local service has no rate limiter, so any
    limit would have to live elsewhere.
+9. What triggers Computer History summarization, how often, and with what
+   token budget? The docs are silent; only the file naming is known.
+10. What goes into the suppressed-events file: excluded events retained for
+    audit, or only markers recording that something was dropped?
+11. How are Computer History memories weighted against other memories when
+    memories are injected into a chat?
